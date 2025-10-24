@@ -1,0 +1,75 @@
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+
+# === Django ===
+*.log
+*.pot
+*.pyc
+db.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# === Environment ===
+.env
+.env.*
+venv/
+venv*/
+ENV/
+.envrc
+env_site
+
+# === IDEs ===
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# === OS generated files ===
+.DS_Store
+Thumbs.db
+
+# === Migrations (optional) ===
+# Uncomment if you want to ignore migration files initially
+# */migrations/
+# !*/migrations/__init__.py
+
+# === Coverage / testing ===
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+htmlcov/
+
+# === Build / distribution ===
+build/
+dist/
+*.egg-info/
+*.egg
+
+# === Logs ===
+*.log
+logs/
+
+# === Docker ===
+*.pid
+*.seed
+*.pid.lock
+docker-compose.override.yml
+
+# === Jupyter / Notebooks ===
+.ipynb_checkpoints/
+
+# === VSCode Workspace ===
+.vscode/
+
+# === PyCharm ===
+.idea/
+--
+
+
+
+
