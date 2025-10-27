@@ -1,10 +1,11 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import User, Role, Permission
-from .serializers import UserSignupSerializer, UserSerializer, RoleSerializer, PermissionSerializer, StudentSignupSerializer
+from .models import User, Role, Permission, Category
+from .serializers import UserSignupSerializer, UserSerializer, RoleSerializer, PermissionSerializer, StudentSignupSerializer, CategorySerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .permissions import IsTeacherOrAdmin, IsAdmin
 
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -127,5 +128,26 @@ class StudentListView(generics.ListAPIView):
     queryset = User.objects.filter(role__name="Student")
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]  
+
+class CategoryListCreateView(generics.ListCreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]  # All authenticated users
+        return [IsTeacherOrAdmin()]  # Teacher/Admin only
+
+
+class CategoryUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return [permissions.IsAuthenticated(), IsTeacherOrAdmin()]  # Teacher/Admin
+        return [permissions.IsAuthenticated(), IsAdmin()]  # Admin only for DELETE
     
-        
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save()

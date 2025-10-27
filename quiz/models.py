@@ -68,3 +68,11 @@ class User(AbstractUser):
         if self.role and self.role.permissions.filter(name=perm_name).exists():
             return True
         return False
+    
+class Category(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        self.name

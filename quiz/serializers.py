@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Role, Permission
+from .models import User, Role, Permission, Category
 import re
 
 # Role Serializer
@@ -95,4 +95,11 @@ class StudentSignupSerializer(serializers.ModelSerializer):
         user.is_verified = False  # must be verified by teacher later
         user.save()
         return user
+    
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'description']
+    
+
 
