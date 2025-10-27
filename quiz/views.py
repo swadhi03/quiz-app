@@ -40,7 +40,7 @@ class UserCRUDView(APIView):
     def get(self, request, user_id=None):
         if user_id:
             try:
-                user = User.objects.get(id=user_id)
+                user = User.objects.get(id=user_id, is_deleted=False)
                 serializer = UserSerializer(user)
             except User.DoesNotExist:
                 return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -86,7 +86,8 @@ class UserCRUDView(APIView):
             return Response({"error": "User ID is required for deletion"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(id=user_id)
-            user.delete()
+            user.is_deleted = True
+            user.save()
             return Response({"message": "User deleted successfully"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)

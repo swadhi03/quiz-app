@@ -54,6 +54,7 @@ class User(AbstractUser):
     # Timestamps
     date_joined = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
 
     # Authentication
     USERNAME_FIELD = 'email'
