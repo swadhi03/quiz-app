@@ -76,3 +76,15 @@ class Category(models.Model):
 
     def __str__(self):
         self.name
+
+class Quiz(models.Model):
+    title = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='quizzez')
+    created_by = models.ForeignKey('User', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        self.title

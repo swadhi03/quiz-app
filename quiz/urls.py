@@ -8,7 +8,9 @@ from .views import (
     VerifyStudentView,
     StudentListView,
     CategoryListCreateView,
-    CategoryUpdateDeleteView
+    CategoryUpdateDeleteView,
+    QuizDetailView,
+    QuizListCreateView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -38,5 +40,8 @@ urlpatterns = [
     path("api/students/", StudentListView.as_view(), name="students-list"),
 
     path('categories/', CategoryListCreateView.as_view(), name='category-list-create'),
-    path('categories/<int:pk>/', CategoryUpdateDeleteView.as_view(), name='category-update-delete')
+    path('categories/<int:pk>/', CategoryUpdateDeleteView.as_view(), name='category-update-delete'),
+
+    path('quizzes/', QuizListCreateView.as_view(), name='quiz-list-create'),
+    path('quizzes/<int:pk>/', QuizDetailView.as_view(), name='quiz-detail'),
 ]

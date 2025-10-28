@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Role, Permission, Category
+from .models import User, Role, Permission, Category, Quiz
 import re
 
 # Role Serializer
@@ -101,5 +101,14 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'description']
     
+class QuizSerializer(serializers.ModelSerializer):
+    category_name = serializers.ReadOnlyField(source='category.name')
+    creator_name = serializers.ReadOnlyField(source='created_by.full_name')
+
+    class Meta:
+        model = Quiz
+
+        fields =['id', 'title', 'description', 'category', 'category_name', 'creator_name', 'created_at']
+
 
 
