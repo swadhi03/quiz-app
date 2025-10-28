@@ -1,11 +1,11 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import User, Role, Permission, Category
-from .serializers import UserSignupSerializer, UserSerializer, RoleSerializer, PermissionSerializer, StudentSignupSerializer, CategorySerializer
+from .models import User, Role, Permission, Category, Quiz
+from .serializers import UserSignupSerializer, UserSerializer, RoleSerializer, PermissionSerializer, StudentSignupSerializer, CategorySerializer, QuizSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .permissions import IsTeacherOrAdmin, IsAdmin
+from .permissions import IsTeacherOrAdmin, IsAdmin, IsVerifiedStudent
 
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -151,3 +151,30 @@ class CategoryUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         instance.is_deleted = True
         instance.save()
+
+class QuizListCreateView(generics.ListCreateAPIView):
+    queryset = Quiz.objects.filter(is_deleted=False)
+    serializer_class = QuizSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsVerifiedStudent()]
+        return [IsTeacherOrAdmin()]
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset =Quiz.objects.filter(is_deleted = False)
+    serializer_class = QuizSerializer
+
+    def get_permissions(self):
+        if self.request.method in ['PUT','PATCH']:
+            return [IsTeacherOrAdmin()]
+        elif self.request.method == 'DELETE':
+            return [IsAdmin()]
+        return [IsVerifiedStudent()]
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save()
+
