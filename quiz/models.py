@@ -88,3 +88,26 @@ class Quiz(models.Model):
 
     def __str__(self):
         self.title
+
+class Question(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    question = models.TextField(100)
+    option_a = models.CharField(max_length=50)
+    option_b = models.CharField(max_length=50)
+    option_c = models.CharField(max_length=50)
+    option_d = models.CharField(max_length=50)
+    correct_answer = models.CharField(max_length=1, choices=[
+        ('A', 'Option A'),
+        ('B', 'Option B'),
+        ('C', 'Option C'),
+        ('D', 'Option D')
+    ])
+    marks = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.question_text[:50]}..."
+    
+

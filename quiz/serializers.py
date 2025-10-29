@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Role, Permission, Category, Quiz
+from .models import User, Role, Permission, Category, Quiz, Question
 import re
 
 # Role Serializer
@@ -110,5 +110,19 @@ class QuizSerializer(serializers.ModelSerializer):
 
         fields =['id', 'title', 'description', 'category', 'category_name', 'creator_name', 'created_at']
 
+class QuestionSerializer(serializers.ModelSerializer):
+    quiz_title = serializers.ReadOnlyField(source='quiz.title')
+    category_name = serializers.ReadOnlyField(source='quiz.category.name')
 
+    class Meta:
+        model = Question
+        fields = [
+            'id', 'quiz', 'quiz_title', 'category_name', 'question',
+            'option_a', 'option_b', 'option_c', 'option_d',
+            'correct_answer', 'marks', 'created_at', 'updated_at'
+        ]
 
+class StudentQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Question
+        exclude = ['correct_answer', 'marks', 'created_at', 'updated_at']

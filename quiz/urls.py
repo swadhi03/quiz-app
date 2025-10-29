@@ -10,7 +10,9 @@ from .views import (
     CategoryListCreateView,
     CategoryUpdateDeleteView,
     QuizDetailView,
-    QuizListCreateView
+    QuizListCreateView,
+    QuestionListCreateView,
+    QuestionDetailView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -44,4 +46,7 @@ urlpatterns = [
 
     path('quizzes/', QuizListCreateView.as_view(), name='quiz-list-create'),
     path('quizzes/<int:pk>/', QuizDetailView.as_view(), name='quiz-detail'),
+
+    path('questions/', QuestionListCreateView.as_view(), name='question-list-create'),
+    path('questions/<int:pk>/', QuestionDetailView.as_view(), name='question-detail'),
 ]

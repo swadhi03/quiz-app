@@ -35,3 +35,4 @@ class IsVerifiedStudent(BasePermission):
         return request.user.is_authenticated and (
             request.user.role and request.user.role.name.lower() == 'student' and request.user.is_verified
         )
+    
