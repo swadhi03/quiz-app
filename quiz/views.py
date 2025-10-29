@@ -1,8 +1,8 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import User, Role, Permission, Category, Quiz
-from .serializers import UserSignupSerializer, UserSerializer, RoleSerializer, PermissionSerializer, StudentSignupSerializer, CategorySerializer, QuizSerializer
+from .models import User, Role, Permission, Category, Quiz, Question
+from .serializers import UserSignupSerializer, UserSerializer, RoleSerializer, PermissionSerializer, StudentSignupSerializer, CategorySerializer, QuizSerializer, QuestionSerializer, StudentQuestionSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .permissions import IsTeacherOrAdmin, IsAdmin, IsVerifiedStudent
@@ -177,4 +177,47 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         instance.is_deleted = True
         instance.save()
+
+class QuestionListCreateView(generics.ListCreateAPIView):
+    serializer_class = QuestionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = Question.objects.filter(is_deleted=False)
+        quiz_id = self.request.query_params.get('quiz_id')  # ?quiz_id=1
+        if quiz_id:
+            queryset = queryset.filter(quiz_id=quiz_id)
+        return queryset
+
+    def get_serializer_class(self):
+        user = self.request.user
+        if hasattr(user, 'role') and user.role.name.lower() == 'student':
+            return StudentQuestionSerializer  # hides correct_answer, created_at, updated_at
+        return QuestionSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.IsAuthenticated()]  # any logged-in user can view
+        return [IsTeacherOrAdmin()]  # only teacher/admin can create
+    
+
+# Retrieve, Update, Delete Question
+class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Question.objects.filter(is_deleted=False)
+    serializer_class = QuestionSerializer
+
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return [IsTeacherOrAdmin()]
+        elif self.request.method == 'DELETE':
+            return [IsAdmin()]
+        return [permissions.IsAuthenticated()]
+
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save()
+
+            
+
+
 
