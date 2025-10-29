@@ -14,7 +14,7 @@ from .views import (
     QuestionListCreateView,
     QuestionDetailView,
     QuizSubmitView, MyQuizAttemptsView, QuizAttemptDetailView,
-    QuizAllAttemptsView,QuizAttemptStartView, SendResultEmailView
+    QuizAllAttemptsView,QuizAttemptStartView, SendResultEmailView, SendSummaryReportEmailView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -59,4 +59,5 @@ urlpatterns = [
     path('quizzes/<int:quiz_id>/attempts/', QuizAllAttemptsView.as_view(), name='quiz-all-attempts'),
 
     path('attempts/send-result/', SendResultEmailView.as_view(), name='send-result-email'),
+    path('reports/send-summary', SendSummaryReportEmailView.as_view(), name='send-summary')
 ]

@@ -11,6 +11,8 @@ from quiz import serializers
 from rest_framework.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils import timezone
+from django.db.models import Avg, Count
 
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -348,6 +350,47 @@ class SendResultEmailView(generics.GenericAPIView):
         send_mail(subject, message, 'no-reply@quizapp.com', recipient_list)
 
         return Response({"message": "Result email sent successfully!"}, status=status.HTTP_200_OK)
+    
+class SendSummaryReportEmailView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        role_name = getattr(user.role, "name", "").lower() if getattr(user, "role", None) else ""
+
+        # Allow only Admins or Teachers
+        if not (user.is_staff or role_name == "teacher"):
+            return Response(
+                {"error": "Only teachers or admins can send summary reports."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Gather data
+        if role_name == "teacher":
+            quizzes = Quiz.objects.filter(created_by=user)
+        else:
+            quizzes = Quiz.objects.all()
+
+        attempts = QuizAttempt.objects.filter(quiz__in=quizzes)
+        total_quizzes = quizzes.count()
+        total_attempts = attempts.count()
+        avg_score = attempts.aggregate(avg_score=Avg("score"))["avg_score"] or 0
+
+        # Email content
+        subject = f"Quiz Summary Report - {timezone.now().strftime('%Y-%m-%d')}"
+        message = (
+            f"Hello {user.username},\n\n"
+            f"Here is your summary report:\n\n"
+            f"Total Quizzes: {total_quizzes}\n"
+            f"Total Attempts: {total_attempts}\n"
+            f"Average Score: {round(avg_score, 2)} / 10\n"
+            f"Generated on: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            f"Best regards,\nQuizApp Reporting System"
+        )
+
+        send_mail(subject, message, 'no-reply@quizapp.com', [user.email])
+
+        return Response({"message": "Summary report sent successfully!"}, status=status.HTTP_200_OK)
             
 
 
