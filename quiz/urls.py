@@ -12,7 +12,9 @@ from .views import (
     QuizDetailView,
     QuizListCreateView,
     QuestionListCreateView,
-    QuestionDetailView
+    QuestionDetailView,
+    QuizSubmitView, MyQuizAttemptsView, QuizAttemptDetailView,
+    QuizAllAttemptsView,QuizAttemptStartView, SendResultEmailView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -49,4 +51,12 @@ urlpatterns = [
 
     path('questions/', QuestionListCreateView.as_view(), name='question-list-create'),
     path('questions/<int:pk>/', QuestionDetailView.as_view(), name='question-detail'),
+
+    path('attempts/start/', QuizAttemptStartView.as_view(), name='start-quiz'),
+    path('attempts/submit/', QuizSubmitView.as_view(), name='quiz-submit'),
+    path('attempts/', MyQuizAttemptsView.as_view(), name='my-attempts'),
+    path('attempts/<int:pk>/', QuizAttemptDetailView.as_view(), name='attempt-detail'),
+    path('quizzes/<int:quiz_id>/attempts/', QuizAllAttemptsView.as_view(), name='quiz-all-attempts'),
+
+    path('attempts/send-result/', SendResultEmailView.as_view(), name='send-result-email'),
 ]

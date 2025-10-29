@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Role, Permission, Category, Quiz, Question
+from .models import User, Role, Permission, Category, Quiz, Question, QuizAttempt, AnswerSubmission
 import re
 
 # Role Serializer
@@ -124,5 +124,36 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class StudentQuestionSerializer(serializers.ModelSerializer):
     class Meta:
-        model=Question
+        model = Question
         exclude = ['correct_answer', 'marks', 'created_at', 'updated_at']
+
+class AnswerSubmissionSerializer(serializers.ModelSerializer):
+    question_text = serializers.ReadOnlyField(source='question.question')
+
+    class Meta:
+        model = AnswerSubmission
+        fields = ["id", "attempt", "question", "question_text", "selected_option", "is_correct"]
+
+
+class QuizAttemptSerializer(serializers.ModelSerializer):
+    quiz_title = serializers.ReadOnlyField(source='quiz.title')
+    answers = AnswerSubmissionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = QuizAttempt
+        fields = ["id", "student", "quiz", "quiz_title", "started_at", "completed_at", "score", "answers"]
+
+
+class QuizAttemptCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuizAttempt
+        fields = ["quiz"]
+
+
+class AnswerSubmitSerializer(serializers.Serializer):
+    attempt_id = serializers.IntegerField()
+    answers = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.CharField()
+        )
+    )
