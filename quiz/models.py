@@ -108,6 +108,38 @@ class Question(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.question_text[:50]}..."
+        return f"{self.question[:50]}..."
+    
+class QuizAttempt(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    quiz = models.ForeignKey("Quiz", on_delete=models.CASCADE)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True) 
+    score = models.FloatField(default=0)
+
+    def __str__(self):
+        return f"{self.student.username} - {self.quiz.title}"
+
+    def calculate_score(self):
+        total_questions = self.answers.count()
+        correct_answers = self.answers.filter(is_correct=True).count()
+
+        if total_questions > 0:
+            self.score = (correct_answers / total_questions) * 10  # or *100 for percentage
+        else:
+            self.score = 0
+
+        self.completed_at = timezone.now()
+        self.save()
+
+class AnswerSubmission(models.Model):
+    attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey("Question", on_delete=models.CASCADE)
+    selected_option = models.CharField(max_length=50)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.attempt.student.username} - {self.question.question[:50]}"
+
     
 

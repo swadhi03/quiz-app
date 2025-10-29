@@ -1,11 +1,16 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import User, Role, Permission, Category, Quiz, Question
-from .serializers import UserSignupSerializer, UserSerializer, RoleSerializer, PermissionSerializer, StudentSignupSerializer, CategorySerializer, QuizSerializer, QuestionSerializer, StudentQuestionSerializer
+from .models import User, Role, Permission, Category, Quiz, Question, AnswerSubmission, QuizAttempt
+from .serializers import UserSignupSerializer, UserSerializer, RoleSerializer, PermissionSerializer, StudentSignupSerializer, CategorySerializer, QuizSerializer, QuestionSerializer, StudentQuestionSerializer, QuizAttemptSerializer, QuizAttemptCreateSerializer, AnswerSubmissionSerializer, AnswerSubmitSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .permissions import IsTeacherOrAdmin, IsAdmin, IsVerifiedStudent
+from django.shortcuts import get_object_or_404
+from quiz import serializers
+from rest_framework.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.conf import settings
 
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -217,6 +222,132 @@ class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.is_deleted = True
         instance.save()
 
+class QuizAttemptStartView(generics.CreateAPIView):
+    queryset = QuizAttempt.objects.all()
+    serializer_class = QuizAttemptCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        quiz = serializer.validated_data.get('quiz')
+        existing_attempt = QuizAttempt.objects.filter(
+            student=self.request.user, quiz=quiz, completed_at__isnull=True
+        ).first()
+        if existing_attempt:
+            raise ValidationError("You already have an active attempt for this quiz.")
+        serializer.save(student=self.request.user, quiz=quiz)
+
+
+# Submit quiz answers
+class QuizSubmitView(generics.GenericAPIView):
+    serializer_class = AnswerSubmitSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        attempt_id = serializer.validated_data['attempt_id']
+        answers = serializer.validated_data['answers']
+
+        attempt = get_object_or_404(QuizAttempt, id=attempt_id, student=request.user)
+
+        for ans in answers:
+            question_id = ans.get('question_id')
+            selected_option = ans.get('selected_option')
+
+            # Ensure question belongs to the same quiz
+            question = get_object_or_404(Question, id=question_id, quiz_id=attempt.quiz.id)
+
+            is_correct = (
+                selected_option.strip().lower() == question.correct_answer.strip().lower()
+            )
+
+            AnswerSubmission.objects.create(
+                attempt=attempt,
+                question=question,
+                selected_option=selected_option,
+                is_correct=is_correct
+            )
+
+        # Update score after all answers processed
+        attempt.calculate_score()
+
+        return Response({
+            "message": "Answers submitted successfully",
+            "score": attempt.score
+        })
+
+
+# View all quiz attempts of the logged-in user
+class MyQuizAttemptsView(generics.ListAPIView):
+    serializer_class = QuizAttemptSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return QuizAttempt.objects.filter(student=self.request.user).order_by('-started_at')
+
+
+# View a single quiz attempt (corrected your MyQuitAttemptView)
+class MyQuizAttemptView(generics.RetrieveAPIView):
+    serializer_class = QuizAttemptSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return QuizAttempt.objects.filter(student=self.request.user)
+
+
+# View a single attempt’s details (same as above, for clarity)
+class QuizAttemptDetailView(generics.RetrieveAPIView):
+    serializer_class = QuizAttemptSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return QuizAttempt.objects.filter(student=self.request.user)
+
+
+# View all attempts of a quiz (for teachers/admins)
+class QuizAllAttemptsView(generics.ListAPIView):
+    serializer_class = QuizAttemptSerializer
+    permission_classes = [IsTeacherOrAdmin]
+
+    def get_queryset(self):
+        quiz_id = self.kwargs.get('quiz_id')
+        return QuizAttempt.objects.filter(quiz_id=quiz_id).order_by('-started_at')
+    
+class SendResultEmailView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        attempt_id = request.data.get("attempt_id")
+        attempt = get_object_or_404(QuizAttempt, id=attempt_id)
+
+        user = request.user
+        role_name = getattr(user.role, "name", "").lower() if getattr(user, "role", None) else ""
+
+        print("USER:", user.username)
+        print("IS STAFF:", user.is_staff)
+        print("ROLE NAME:", role_name)
+
+        # ✅ Allow both Admins (is_staff=True) and Teachers (role.name == "Teacher")
+        if not (user.is_staff or role_name == "teacher"):
+            return Response(
+                {"error": f"Only teachers or admins can send emails. (Your role: {role_name or 'None'})"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Email content
+        subject = f"Quiz Result for {attempt.quiz.title}"
+        message = (
+            f"Hello {attempt.student.username},\n\n"
+            f"Your quiz '{attempt.quiz.title}' has been graded.\n"
+            f"Your Score: {attempt.score}/10\n\n"
+            f"Keep practicing!\n"
+        )
+        recipient_list = [attempt.student.email]
+
+        send_mail(subject, message, 'no-reply@quizapp.com', recipient_list)
+
+        return Response({"message": "Result email sent successfully!"}, status=status.HTTP_200_OK)
             
 
 
