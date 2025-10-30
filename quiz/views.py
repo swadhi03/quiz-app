@@ -392,6 +392,29 @@ class SendSummaryReportEmailView(generics.GenericAPIView):
 
         return Response({"message": "Summary report sent successfully!"}, status=status.HTTP_200_OK)
             
+class OverallLeaderboardView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        leaderboard = (
+            QuizAttempt.objects.values('student__username')
+            .annotate(avg_score=Avg('score'))
+            .order_by('-avg_score')[:10]
+        )
+        return Response(leaderboard)
+    
+class CategoryLeaderboardView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, category_id):  # 👈 Must include category_id here
+        leaderboard = (
+            QuizAttempt.objects.filter(quiz__category_id=category_id)
+            .values('student__username')
+            .annotate(avg_score=Avg('score'))
+            .order_by('-avg_score')[:10]
+        )
+
+        return Response(leaderboard, status=status.HTTP_200_OK)
 
 
 
