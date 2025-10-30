@@ -12,7 +12,9 @@ from rest_framework.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from django.db.models import Avg, Count
+from rest_framework.exceptions import PermissionDenied, NotFound
+from django.db.models import Avg, Count, Q
+import random
 
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -330,7 +332,6 @@ class SendResultEmailView(generics.GenericAPIView):
         print("IS STAFF:", user.is_staff)
         print("ROLE NAME:", role_name)
 
-        # ✅ Allow both Admins (is_staff=True) and Teachers (role.name == "Teacher")
         if not (user.is_staff or role_name == "teacher"):
             return Response(
                 {"error": f"Only teachers or admins can send emails. (Your role: {role_name or 'None'})"},
@@ -406,7 +407,7 @@ class OverallLeaderboardView(generics.GenericAPIView):
 class CategoryLeaderboardView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, category_id):  # 👈 Must include category_id here
+    def get(self, request, category_id):  
         leaderboard = (
             QuizAttempt.objects.filter(quiz__category_id=category_id)
             .values('student__username')
@@ -415,6 +416,50 @@ class CategoryLeaderboardView(generics.GenericAPIView):
         )
 
         return Response(leaderboard, status=status.HTTP_200_OK)
+    
+class LatestQuizzesView(generics.ListAPIView):
+    serializer_class = QuizSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if not getattr(user, 'is_verified', False):
+            raise PermissionDenied("Only verified students can view latest quizzes.")
+        
+        return Quiz.objects.filter(is_deleted=False).order_by('-created_at')[:4]
 
+class RandomPracticeQuestionView(generics.RetrieveAPIView):
+    serializer_class = QuestionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        user = self.request.user
+        if not getattr(user, 'is_verified', False):
+            raise PermissionDenied("Only verified students can view latest quizzes.")
+        questions = Question.objects.all()  # removed quiz__is_verified=True
+        return random.choice(questions) if questions.exists() else None
+
+class SearchQuizView(generics.ListAPIView):
+    serializer_class = QuizSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if not getattr(user, 'is_verified', False):
+            raise PermissionDenied("Only verified students can search quizzes.")
+
+        keyword = self.request.query_params.get('keyword', '')
+        category_id = self.request.query_params.get('category_id')
+
+        queryset = Quiz.objects.all()
+        if keyword:
+            queryset = queryset.filter(
+                Q(title__icontains=keyword) | Q(description__icontains=keyword)
+            )
+
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+
+        return queryset
 

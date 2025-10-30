@@ -11,8 +11,8 @@ from .views import (
     CategoryUpdateDeleteView,
     QuizDetailView,
     QuizListCreateView,
-    QuestionListCreateView,
-    QuestionDetailView, CategoryLeaderboardView,
+    QuestionListCreateView, SearchQuizView,
+    QuestionDetailView, CategoryLeaderboardView, LatestQuizzesView, RandomPracticeQuestionView,
     QuizSubmitView, MyQuizAttemptsView, QuizAttemptDetailView, OverallLeaderboardView,
     QuizAllAttemptsView,QuizAttemptStartView, SendResultEmailView, SendSummaryReportEmailView
 )
@@ -63,4 +63,9 @@ urlpatterns = [
 
     path('leaderboard/', OverallLeaderboardView.as_view(), name='send-summary'),
     path('leaderboard/category/<int:category_id>/', CategoryLeaderboardView.as_view(), name='category-leaderboard'),
+
+    path('latest-quiz/', LatestQuizzesView.as_view(), name='send-summary'),
+    path('practice/random/', RandomPracticeQuestionView.as_view(), name='random-practice'),
+    path('search-quiz/', SearchQuizView.as_view(), name='random-practice'),
+
 ]
