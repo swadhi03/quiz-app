@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Role, Permission
+from .models import User, Role, Permission, Category, Quiz, Question, QuizAttempt, AnswerSubmission
 import re
 
 # Role Serializer
@@ -97,4 +97,65 @@ class StudentSignupSerializer(serializers.ModelSerializer):
         user.is_verified = False  # must be verified by teacher later
         user.save()
         return user
+    
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'description']
+    
+class QuizSerializer(serializers.ModelSerializer):
+    category_name = serializers.ReadOnlyField(source='category.name')
+    creator_name = serializers.ReadOnlyField(source='created_by.full_name')
 
+    class Meta:
+        model = Quiz
+
+        fields =['id', 'title', 'description', 'category', 'category_name', 'creator_name', 'created_at']
+
+class QuestionSerializer(serializers.ModelSerializer):
+    quiz_title = serializers.ReadOnlyField(source='quiz.title')
+    category_name = serializers.ReadOnlyField(source='quiz.category.name')
+
+    class Meta:
+        model = Question
+        fields = [
+            'id', 'quiz', 'quiz_title', 'category_name', 'question',
+            'option_a', 'option_b', 'option_c', 'option_d',
+            'correct_answer', 'marks', 'created_at', 'updated_at'
+        ]
+
+class StudentQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        exclude = ['correct_answer', 'marks', 'created_at', 'updated_at']
+
+class AnswerSubmissionSerializer(serializers.ModelSerializer):
+    question_text = serializers.ReadOnlyField(source='question.question')
+
+    class Meta:
+        model = AnswerSubmission
+        fields = ["id", "attempt", "question", "question_text", "selected_option", "is_correct"]
+
+
+class QuizAttemptSerializer(serializers.ModelSerializer):
+    quiz_title = serializers.ReadOnlyField(source='quiz.title')
+    answers = AnswerSubmissionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = QuizAttempt
+        fields = ["id", "student", "quiz", "quiz_title", "started_at", "completed_at", "score", "answers"]
+
+
+class QuizAttemptCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuizAttempt
+        fields = ["quiz"]
+
+
+class AnswerSubmitSerializer(serializers.Serializer):
+    attempt_id = serializers.IntegerField()
+    answers = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.CharField()
+        )
+    )

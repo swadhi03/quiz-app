@@ -40,5 +40,35 @@ urlpatterns = [
 
     path('api/students/signup/', StudentSignupView.as_view(), name='student-signup'),
     path('api/students/<int:student_id>/verify/', VerifyStudentView.as_view(), name='verify-student'),
-    path("api/students/", StudentListView.as_view(), name="students-list")
+    path("api/students/", StudentListView.as_view(), name="students-list"),
+
+    path('categories/', CategoryListCreateView.as_view(), name='category-list-create'),
+    path('categories/<int:pk>/', CategoryUpdateDeleteView.as_view(), name='category-update-delete'),
+
+    path('quizzes/', QuizListCreateView.as_view(), name='quiz-list-create'),
+    path('quizzes/<int:pk>/', QuizDetailView.as_view(), name='quiz-detail'),
+
+    path('questions/', QuestionListCreateView.as_view(), name='question-list-create'),
+    path('questions/<int:pk>/', QuestionDetailView.as_view(), name='question-detail'),
+
+    path('attempts/start/', QuizAttemptStartView.as_view(), name='start-quiz'),
+    path('attempts/submit/', QuizSubmitView.as_view(), name='quiz-submit'),
+    path('attempts/', MyQuizAttemptsView.as_view(), name='my-attempts'),
+    path('attempts/<int:pk>/', QuizAttemptDetailView.as_view(), name='attempt-detail'),
+    path('quizzes/<int:quiz_id>/attempts/', QuizAllAttemptsView.as_view(), name='quiz-all-attempts'),
+
+    path('attempts/send-result/', SendResultEmailView.as_view(), name='send-result-email'),
+    path('reports/send-summary', SendSummaryReportEmailView.as_view(), name='send-summary'),
+
+    path('leaderboard/', OverallLeaderboardView.as_view(), name='send-summary'),
+    path('leaderboard/category/<int:category_id>/', CategoryLeaderboardView.as_view(), name='category-leaderboard'),
+
+    path('latest-quiz/', LatestQuizzesView.as_view(), name='send-summary'),
+    path('practice/random/', RandomPracticeQuestionView.as_view(), name='random-practice'),
+    path('search-quiz/', SearchQuizView.as_view(), name='random-practice'),
+
+    path('attempts/<attempt_id>/pdf/', QuizResultPDFView.as_view(), name='random-practice'),
+    path('results/export/', ExportQuizResultsCSVView.as_view(), name='random-practice'),
+    path('results/export/<quiz_id>/', ExportQuizResultsCSVView.as_view(), name='random-practice'),
+
 ]

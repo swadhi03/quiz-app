@@ -68,3 +68,78 @@ class User(AbstractUser):
         if self.role and self.role.permissions.filter(name=perm_name).exists():
             return True
         return False
+    
+class Category(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        self.name
+
+class Quiz(models.Model):
+    title = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='quizzez')
+    created_by = models.ForeignKey('User', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        self.title
+
+class Question(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    question = models.TextField(100)
+    option_a = models.CharField(max_length=50)
+    option_b = models.CharField(max_length=50)
+    option_c = models.CharField(max_length=50)
+    option_d = models.CharField(max_length=50)
+    correct_answer = models.CharField(max_length=1, choices=[
+        ('A', 'Option A'),
+        ('B', 'Option B'),
+        ('C', 'Option C'),
+        ('D', 'Option D')
+    ])
+    marks = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.question[:50]}..."
+    
+class QuizAttempt(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    quiz = models.ForeignKey("Quiz", on_delete=models.CASCADE)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True) 
+    score = models.FloatField(default=0)
+
+    def __str__(self):
+        return f"{self.student.username} - {self.quiz.title}"
+
+    def calculate_score(self):
+        total_questions = self.answers.count()
+        correct_answers = self.answers.filter(is_correct=True).count()
+
+        if total_questions > 0:
+            self.score = (correct_answers / total_questions) * 10  # or *100 for percentage
+        else:
+            self.score = 0
+
+        self.completed_at = timezone.now()
+        self.save()
+
+class AnswerSubmission(models.Model):
+    attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey("Question", on_delete=models.CASCADE)
+    selected_option = models.CharField(max_length=50)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.attempt.student.username} - {self.question.question[:50]}"
+
+    
+
