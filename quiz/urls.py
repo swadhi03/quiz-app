@@ -7,9 +7,18 @@ from .views import (
     StudentSignupView,
     VerifyStudentView,
     StudentListView,
+    StudentListView,
     TeacherListAPIView,
     StudentsAwaitingVerificationAPIView,
-    AllStudentsListView
+    AllStudentsListView,
+    CategoryListCreateView,
+    CategoryUpdateDeleteView,
+    QuizDetailView,
+    QuizListCreateView,
+    QuestionListCreateView, SearchQuizView, QuizResultPDFView, ExportQuizResultsCSVView,
+    QuestionDetailView, CategoryLeaderboardView, LatestQuizzesView, RandomPracticeQuestionView,
+    QuizSubmitView, MyQuizAttemptsView, QuizAttemptDetailView, OverallLeaderboardView,
+    QuizAllAttemptsView,QuizAttemptStartView, SendResultEmailView, SendSummaryReportEmailView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
