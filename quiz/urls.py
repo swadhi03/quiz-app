@@ -11,7 +11,7 @@ from .views import (
     CategoryUpdateDeleteView,
     QuizDetailView,
     QuizListCreateView,
-    QuestionListCreateView, SearchQuizView,
+    QuestionListCreateView, SearchQuizView, QuizResultPDFView, ExportQuizResultsCSVView,
     QuestionDetailView, CategoryLeaderboardView, LatestQuizzesView, RandomPracticeQuestionView,
     QuizSubmitView, MyQuizAttemptsView, QuizAttemptDetailView, OverallLeaderboardView,
     QuizAllAttemptsView,QuizAttemptStartView, SendResultEmailView, SendSummaryReportEmailView
@@ -67,5 +67,9 @@ urlpatterns = [
     path('latest-quiz/', LatestQuizzesView.as_view(), name='send-summary'),
     path('practice/random/', RandomPracticeQuestionView.as_view(), name='random-practice'),
     path('search-quiz/', SearchQuizView.as_view(), name='random-practice'),
+
+    path('attempts/<attempt_id>/pdf/', QuizResultPDFView.as_view(), name='random-practice'),
+    path('results/export/', ExportQuizResultsCSVView.as_view(), name='random-practice'),
+    path('results/export/<quiz_id>/', ExportQuizResultsCSVView.as_view(), name='random-practice'),
 
 ]
