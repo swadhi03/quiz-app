@@ -25,14 +25,16 @@ class UserSignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'full_name', 'email', 'password', 'role', 'student_class', 'department']
 
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Email is already in use.")
+    def validate_username(self, value):
+        user = self.instance  # current user being updated
+        if User.objects.filter(username=value).exclude(id=user.id if user else None).exists():
+            raise serializers.ValidationError("Username is already taken.")
         return value
 
-    def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username is already taken.")
+    def validate_email(self, value):
+        user = self.instance
+        if User.objects.filter(email=value).exclude(id=user.id if user else None).exists():
+            raise serializers.ValidationError("Email is already in use.")
         return value
 
     def validate_password(self, value):

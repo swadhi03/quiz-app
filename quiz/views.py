@@ -5,20 +5,7 @@ from .models import User, Role, Permission, Category, Quiz, Question, AnswerSubm
 from .serializers import UserSignupSerializer, UserSerializer, RoleSerializer, PermissionSerializer, StudentSignupSerializer, CategorySerializer, QuizSerializer, QuestionSerializer, StudentQuestionSerializer, QuizAttemptSerializer, QuizAttemptCreateSerializer, AnswerSubmissionSerializer, AnswerSubmitSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .permissions import IsTeacherOrAdmin, IsAdmin, IsVerifiedStudent
-from django.shortcuts import get_object_or_404
-from quiz import serializers
-from rest_framework.exceptions import ValidationError
-from django.core.mail import send_mail
-from django.conf import settings
-from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, NotFound
-from django.db.models import Avg, Count, Q
-import random
-from django.http import HttpResponse
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-import csv
+from rest_framework.permissions import IsAdminUser
 
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -105,6 +92,41 @@ class UserCRUDView(APIView):
             return Response({"message": "User deleted successfully"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class TeacherListAPIView(APIView):
+    permission_classes = [IsAdminUser]  # Only admin can access
+
+    def get(self, request):
+        teachers = User.objects.filter(role__name='Teacher')
+        serializer = UserSerializer(teachers, many=True)
+        return Response(serializer.data)
+    
+class StudentsAwaitingVerificationAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Allow only teachers
+        if not getattr(user, 'role', None) or user.role.name != 'Teacher':
+            return Response({"error": "Only teachers can view this list."}, status=403)
+
+        # Get students who are not verified
+        students = User.objects.filter(role__name='Student', is_verified=False)
+        serializer = UserSerializer(students, many=True)
+        return Response(serializer.data)
+    
+class AllStudentsListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if not user.is_staff and getattr(user, 'role', None) and user.role.name != 'Teacher':
+            return Response({"error": "Only teachers or admins can view all students."}, status=403)
+
+        students = User.objects.filter(role__name='Student')
+        serializer = UserSerializer(students, many=True)
+        return Response(serializer.data)
 
 class StudentSignupView(generics.CreateAPIView):
     serializer_class = StudentSignupSerializer

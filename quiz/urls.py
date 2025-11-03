@@ -7,14 +7,9 @@ from .views import (
     StudentSignupView,
     VerifyStudentView,
     StudentListView,
-    CategoryListCreateView,
-    CategoryUpdateDeleteView,
-    QuizDetailView,
-    QuizListCreateView,
-    QuestionListCreateView, SearchQuizView, QuizResultPDFView, ExportQuizResultsCSVView,
-    QuestionDetailView, CategoryLeaderboardView, LatestQuizzesView, RandomPracticeQuestionView,
-    QuizSubmitView, MyQuizAttemptsView, QuizAttemptDetailView, OverallLeaderboardView,
-    QuizAllAttemptsView,QuizAttemptStartView, SendResultEmailView, SendSummaryReportEmailView
+    TeacherListAPIView,
+    StudentsAwaitingVerificationAPIView,
+    AllStudentsListView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -30,6 +25,10 @@ urlpatterns = [
     # Assign role to a user (POST) - expects {"role": <role_id>}
     path('api/users/<int:user_id>/assign-role/',            # POST only
          UserCRUDView.as_view(), name='users-assign-role'), # route handled by a separate view in backend ideally
+    path('admin/teachers/', TeacherListAPIView.as_view(), name='teacher-list'),
+    path('teacher/students-awaiting-verification/', StudentsAwaitingVerificationAPIView.as_view(), name='students-awaiting-verification'),
+    path('students/all/', AllStudentsListView.as_view(), name='all-students'),
+
 
     # Roles & Permissions listing
     path('api/roles/', RoleListView.as_view(), name='roles-list'),
