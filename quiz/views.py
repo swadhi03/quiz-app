@@ -15,6 +15,10 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, NotFound
 from django.db.models import Avg, Count, Q
 import random
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import csv
 
 class RoleListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -462,4 +466,69 @@ class SearchQuizView(generics.ListAPIView):
             queryset = queryset.filter(category_id=category_id)
 
         return queryset
+    
+class QuizResultPDFView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, attempt_id):
+        attempt = get_object_or_404(QuizAttempt, id=attempt_id, student=request.user)
+
+        # Create PDF Response
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="quiz_result_{attempt_id}.pdf"'
+
+        p = canvas.Canvas(response, pagesize=letter)
+        width, height = letter
+
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(200, height - 50, "Quiz Result Report")
+
+        p.setFont("Helvetica", 12)
+        p.drawString(100, height - 100, f"Student: {attempt.student.username}")
+        p.drawString(100, height - 120, f"Quiz: {attempt.quiz.title}")
+        p.drawString(100, height - 140, f"Score: {attempt.score}/10")
+
+        y = height - 180
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(100, y, "Answers:")
+        y -= 20
+
+        for ans in attempt.answers.all():
+            p.setFont("Helvetica", 11)
+            p.drawString(100, y, f"Q: {ans.question.question}")
+            p.drawString(100, y - 15, f"Selected: {ans.selected_option}  |  Correct: {ans.is_correct}")
+            y -= 40
+
+        p.showPage()
+        p.save()
+        return response
+    
+class ExportQuizResultsCSVView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, quiz_id=None):
+        user = request.user
+        if not user.is_staff and getattr(user.role, 'name', '') != 'Teacher':
+            return Response({"error": "Only teachers or admins can export results."}, status=403)
+
+        attempts = QuizAttempt.objects.all()
+        if quiz_id:
+            attempts = attempts.filter(quiz_id=quiz_id)
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="quiz_results.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(["Quiz", "Student", "Score", "Started At", "Completed At"])
+
+        for attempt in attempts:
+            writer.writerow([
+                attempt.quiz.title,
+                attempt.student.username,
+                attempt.score,
+                attempt.started_at,
+                attempt.completed_at
+            ])
+
+        return response
 
